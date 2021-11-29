@@ -78,10 +78,10 @@ sh test-script.sh
 ### 5. Main script to run the jar using spark-submit using the access key & secret key provided in the mail
 sh start-script.sh <access-key> <secret-key>
 
-###6 The final tsv file is available at:
+### 6 The final tsv file is available at:
 /app/output/result/part-xxx....xx.csv
 
-### 6. To exit docker container
+### 7. To exit docker container
 exit
 
 
