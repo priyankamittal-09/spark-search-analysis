@@ -75,11 +75,14 @@ docker run -it --rm priyankamittal09/scala-spark-3.2.0:latest /bin/sh
 ### 4. (optional step) Script to pull spark project from the git repository to run SBT tests. You should by default be on the /app directory level.
 sh test-script.sh
 
-### 5. Main script to run the jar using spark-submit using the access key & secret key provided in the mail
+### 5. Main script to run the jar using spark-submit using the same access key & secret key provided in the technical assignment
 sh start-script.sh <access-key> <secret-key>
 
-### 6 The final tsv file is available at:
+### 6 In the docker, the final tsv file is available at:
 /app/output/result/part-xxx....xx.csv
+
+### In github, the final tsv file is available at:
+https://github.com/priyankamittal-09/spark-search-analysis/blob/master/output/result/part-00000-936bf41a-0acf-4e70-88b9-ae4f708d201f-c000.csv
 
 ### 7. To exit docker container
 exit
