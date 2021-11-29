@@ -13,4 +13,7 @@ class Settings(config: Config) extends Serializable {
   val awsAccessKey:String = config.getString("access-key")
   val awsSecretKey:String = config.getString("secret-key")
   val awsCertificateCheck:String = config.getString("cert-check")
+  val startDate:String = config.getString("start-date")
+  val endDate:String = config.getString("end-date")
+
 }

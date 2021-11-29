@@ -20,10 +20,7 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-aws
   "org.apache.hadoop" % "hadoop-aws" % "3.3.1",
   // https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk
-  "com.amazonaws" % "aws-java-sdk" % "1.12.115",
-  // https://mvnrepository.com/artifact/io.findify/s3mock
- "io.findify" %% "s3mock" % "0.2.6" % Test
-
+  "com.amazonaws" % "aws-java-sdk" % "1.12.115"
 )
 
 libraryDependencies ++= Seq (

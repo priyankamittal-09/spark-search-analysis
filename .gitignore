@@ -8,7 +8,6 @@ logs
 *.html
 *.zip
 *.pdf
-*.sh
 *.jar
 *.crc
 

@@ -1,16 +1,20 @@
 package com.data
 
 import com.data.utils.ReadWriteUtils
-import com.data.model.{CompetitorAppearances, RelevantCompetitors, RelevantSearchTerms, ScrapeAppearances, Volumes, Results}
+import com.data.model.{CompetitorAppearances, RelevantCompetitors, RelevantSearchTerms, Results, ScrapeAppearances, Volumes}
+import com.data.utils.DateUtils.generateDatesInRange
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.functions._
 
+import scala.util.{Failure, Success, Try}
+
 object Main extends App{
 
   implicit val logger: Logger = Logger.getLogger(this.getClass)
   System.setProperty("com.amazonaws.sdk.disableCertChecking", settings.awsCertificateCheck)
+  val date_range =  generateDatesInRange(settings.startDate, settings.endDate).toList.mkString("{", ",", "}")
 
   (for {
     scrape_appearances <- readScrapeAppearancesData(settings.scrapeAppearancesDataPath)
@@ -25,6 +29,7 @@ object Main extends App{
     _ <- closeSparkSession()
   } yield ()).run(spark)
 
+
   import spark.implicits._
 
   /** TODO Read Scrape Appearances
@@ -34,29 +39,36 @@ object Main extends App{
    */
   def readScrapeAppearancesData(path: String)(implicit logger:Logger): SparkSessionReader[Dataset[ScrapeAppearances]] = {
     SparkSessionReader { spark =>
-      val scrape_appearances = ReadWriteUtils
-        .readTSV(spark, scrapeAppearancesSchema, path)
-        .as[ScrapeAppearances]
-
-      logger.info("Scrape Appearances")
-      scrape_appearances.printSchema
+      val s3URI = s"$path$date_range/*"
+      val scrape_appearances = Try(ReadWriteUtils
+        .readTSV(spark, scrapeAppearancesSchema, s3URI).get) match {
+        case Success(df) =>
+          df.as[ScrapeAppearances]
+        case Failure(_) =>
+          logger.error(s"Failed to read S3 data")
+          spark.emptyDataset[ScrapeAppearances]
+      }
       scrape_appearances
     }
   }
+
 
   /** TODO Read Competitor Appearances
    *
    * @param path s3 uri for Competitor Appearances
    * @return CompetitorAppearances dataset which gives How many times we saw a given domain appear on a Google search for a given search term on a given day and device.
    */
-  def readCompetitorAppearancesData(path: String)(implicit logger:Logger): SparkSessionReader[Dataset[CompetitorAppearances]] = {
+  def readCompetitorAppearancesData(path: String)(implicit logger: Logger): SparkSessionReader[Dataset[CompetitorAppearances]] = {
     SparkSessionReader { spark =>
-      val competitor_appearances = ReadWriteUtils
-        .readTSV(spark, competitorAppearancesSchema, path)
-        .as[CompetitorAppearances]
-
-      logger.info("Competitor Appearances")
-      competitor_appearances.printSchema()
+      val s3URI = s"$path$date_range/*"
+      val competitor_appearances = Try(ReadWriteUtils
+        .readTSV(spark, competitorAppearancesSchema, s3URI).get) match {
+        case Success(df) =>
+          df.as[CompetitorAppearances]
+        case Failure(_) =>
+          logger.error(s"Failed to read S3 data")
+          spark.emptyDataset[CompetitorAppearances]
+      }
       competitor_appearances
     }
   }
@@ -66,14 +78,16 @@ object Main extends App{
    * @param path s3 uri for Volumes
    * @return Volumes dataset which gives How many times do people normally search for a given term per month.
    */
-  def readVolumesData(path: String)(implicit logger:Logger): SparkSessionReader[Dataset[Volumes]] = {
+  def readVolumesData(path: String)(implicit logger: Logger): SparkSessionReader[Dataset[Volumes]] = {
     SparkSessionReader { spark =>
-      val volumes = ReadWriteUtils
-        .readTSV(spark, volumesSchema, path)
-        .as[Volumes]
-
-      logger.info("Volumes")
-      volumes.printSchema()
+      val volumes = Try(ReadWriteUtils
+        .readTSV(spark, volumesSchema, path).get) match {
+        case Success(df) =>
+          df.as[Volumes]
+        case Failure(_) =>
+          logger.error(s"Failed to read S3 data")
+          spark.emptyDataset[Volumes]
+      }
       volumes
     }
   }
@@ -83,14 +97,16 @@ object Main extends App{
    * @param path s3 uri for Relevant Competitors
    * @return RelevantCompetitors dataset which gives the competitors that are relevant to a given account.
    */
-  def readRelevantCompetitorsData(path: String)(implicit logger:Logger): SparkSessionReader[Dataset[RelevantCompetitors]] = {
+  def readRelevantCompetitorsData(path: String)(implicit logger: Logger): SparkSessionReader[Dataset[RelevantCompetitors]] = {
     SparkSessionReader { spark =>
-      val relevant_competitors = ReadWriteUtils
-        .readTSV(spark, relevantCompetitorsSchema, path)
-        .as[RelevantCompetitors]
-
-      logger.info("Relevant Competitors")
-      relevant_competitors.printSchema()
+      val relevant_competitors = Try(ReadWriteUtils
+        .readTSV(spark, relevantCompetitorsSchema, path).get) match {
+        case Success(df) =>
+          df.as[RelevantCompetitors]
+        case Failure(_) =>
+          logger.error(s"Failed to read S3 data")
+          spark.emptyDataset[RelevantCompetitors]
+      }
       relevant_competitors
     }
   }
@@ -100,14 +116,16 @@ object Main extends App{
    * @param path s3 uri for Relevant Search Terms
    * @return RelevantSearchTerms dataset which gives The search terms that are relevant to a given account.
    */
-  def readRelevantSearchTermsData(path: String)(implicit logger:Logger): SparkSessionReader[Dataset[RelevantSearchTerms]] = {
+  def readRelevantSearchTermsData(path: String)(implicit logger: Logger): SparkSessionReader[Dataset[RelevantSearchTerms]] = {
     SparkSessionReader { spark =>
-      val relevant_search_terms = ReadWriteUtils
-        .readTSV(spark, relevantSearchTermsSchema, path)
-        .as[RelevantSearchTerms]
-
-      logger.info("Relevant Search Terms")
-      relevant_search_terms.printSchema()
+      val relevant_search_terms = Try(ReadWriteUtils
+        .readTSV(spark, relevantSearchTermsSchema, path).get) match {
+        case Success(df) =>
+          df.as[RelevantSearchTerms]
+        case Failure(_) =>
+          logger.error(s"Failed to read S3 data")
+          spark.emptyDataset[RelevantSearchTerms]
+      }
       relevant_search_terms
     }
   }
@@ -143,9 +161,9 @@ object Main extends App{
 
   /** TODO Calculate Impressions
    *
-   * @param frequencyStatsDF
+   * @param frequencyStatsDF calculated frequency dataset
    * @param volumes Volumes dataset
-   * @return Given the calculated frequency of each domain & Volumes datasets, calculate the impressions each domain has received across the search terms based on the formula: Impressions = appearances / scrape_count.
+   * @return Given the calculated frequency of each domain & Volumes datasets, calculate the impressions each domain has received across the search terms based on the formula: Impressions = Frequency * Daily Volume.
    */
   def calculateImpressions(frequencyStatsDF: DataFrame, volumes: Dataset[Volumes])(implicit logger:Logger): SparkSessionReader[DataFrame] =
     SparkSessionReader { spark =>
@@ -168,8 +186,6 @@ object Main extends App{
         .drop("total_appearances", "total_scrape_count", "frequency", "daily_volume")
         .cache()
 
-      logger.info("impressions Data")
-      impressionsStatsDF.printSchema()
       impressionsStatsDF
     }
 
@@ -178,12 +194,12 @@ object Main extends App{
    *
    * @param relevant_competitors RelevantCompetitors dataset which gives the competitors that are relevant to a given account.
    * @param relevant_search_terms RelevantSearchTerms dataset which gives The search terms that are relevant to a given account.
-   * @param impressionsStatsDF
+   * @param impressionsStatsDF calculated impressions dataset
    * @return the Results dataset that contains only the relevant competitors for each account_id and their impressions across the relevant search terms for the same account_id across each day.
    */
 
   def calculateResult( relevant_competitors: Dataset[RelevantCompetitors], relevant_search_terms: Dataset[RelevantSearchTerms], impressionsStatsDF: DataFrame)(implicit logger:Logger): SparkSessionReader[Dataset[Results]] =
-    SparkSessionReader { spark =>
+    SparkSessionReader { _ =>
       logger.debug("Calculate Result")
       val impressionsForRelevantCompetitorsDF = relevant_competitors
         .join(impressionsStatsDF, Seq("domain"), "left")
@@ -201,9 +217,7 @@ object Main extends App{
 
       logger.info("Result")
       result.printSchema()
-
       result.as[Results].cache()
-
     }
 
   /** TODO Write final results to a TSV file
